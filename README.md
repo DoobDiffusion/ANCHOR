@@ -25,7 +25,7 @@ GitHub Pages publishes the root of the `main` branch. `.nojekyll` keeps the site
 - `assets/js/main.js`: mouse and keyboard controls for experiment tabs.
 - `assets/figures/`: optimized WebP exports of manuscript figures.
 
-Verified authors, affiliations, paper PDF/arXiv links, and citation metadata were not available in the supplied manuscript. Add them to the hero when finalized. Template author names are deliberately omitted. This repository currently contains the project website; the repository button does not claim that research code has been released.
+The page is intentionally anonymous. Do not add author names, affiliations, or links to the GitHub repository. Code and Paper are displayed as “Coming soon” in the resource box.
 
 ## Content provenance
 
