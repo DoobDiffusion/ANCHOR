@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#087f8c">
+  <meta name="description" content="ANCHOR: training-free safe diffusion planning via an analytic approximation of Doob’s h-function. Explore the method, multimodal planning results, and robotics benchmarks.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="ANCHOR — Safe Diffusion Planning">
+  <meta property="og:description" content="Condition on safety. Preserve the possibilities. Training-free guidance for multimodal diffusion planners.">
+  <meta property="og:url" content="https://doobdiffusion.github.io/ANCHOR/">
+  <meta property="og:image" content="https://doobdiffusion.github.io/ANCHOR/assets/figures/method-overview.webp">
+  <meta name="twitter:card" content="summary_large_image">
+  <title>ANCHOR: Safe Diffusion Planning</title>
+  <link rel="canonical" href="https://doobdiffusion.github.io/ANCHOR/">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script src="assets/js/main.js" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+  <nav class="nav-wrap" aria-label="Main navigation">
+    <a class="wordmark" href="#top"><img src="assets/favicon.svg" width="25" height="25" alt=""> ANCHOR</a>
+    <div class="nav-links"><a href="#method">Method</a><a href="#experiments">Experiments</a><a href="#results">Results</a><a href="https://github.com/DoobDiffusion/ANCHOR" aria-label="ANCHOR on GitHub">GitHub <span aria-hidden="true">↗</span></a></div>
+  </nav>
+</header>
+<main id="main">
+  <section class="hero container" id="top" aria-labelledby="paper-title">
+    <p class="eyebrow"><span class="status-dot"></span> DIFFUSION MODELS · SAFE PLANNING</p>
+    <h1 id="paper-title"><span class="project-name">ANCHOR</span><span class="paper-title">Safe Diffusion Planning via Analytic<br class="desktop-break"> Approximation of Doob’s <i>h</i>-function</span></h1>
+    <!-- Add verified authors and affiliations here when the paper metadata is final. -->
+    <p class="hero-tagline">Condition on safety. <span>Preserve the possibilities.</span></p>
+    <div class="resource-links">
+      <a class="button button-dark" href="https://github.com/DoobDiffusion/ANCHOR"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .9a11.1 11.1 0 0 0-3.5 21.63c.55.1.76-.24.76-.54v-2.07c-3.08.67-3.73-1.31-3.73-1.31-.5-1.28-1.23-1.62-1.23-1.62-1-.68.08-.67.08-.67 1.11.08 1.7 1.14 1.7 1.14.99 1.69 2.6 1.2 3.24.92.1-.72.39-1.2.7-1.48-2.46-.28-5.05-1.23-5.05-5.49 0-1.21.43-2.2 1.14-2.98-.11-.28-.49-1.41.11-2.94 0 0 .93-.3 3.05 1.14A10.6 10.6 0 0 1 12 6.36c.94 0 1.89.13 2.77.37 2.12-1.44 3.05-1.14 3.05-1.14.6 1.53.22 2.66.11 2.94.71.78 1.14 1.77 1.14 2.98 0 4.27-2.59 5.2-5.06 5.48.4.35.75 1.02.75 2.06v2.94c0 .3.2.65.76.54A11.1 11.1 0 0 0 12 .9Z"/></svg> Project repository</a>
+      <a class="button button-light" href="#method">Explore the method <span aria-hidden="true">↓</span></a>
+    </div>
+    <figure class="teaser">
+      <img src="assets/figures/method-overview.webp" width="2200" height="1235" fetchpriority="high" alt="ANCHOR overview: reverse diffusion steers noisy waypoints around an obstacle. Tweedie moments, signed-distance linearization, and a Gaussian-tail safety probability produce analytic guidance.">
+      <figcaption><strong>Safe trajectories, guided by probability.</strong> ANCHOR turns a pretrained diffusion model into a safety-conditioned planner, using posterior uncertainty and obstacle geometry at inference time.</figcaption>
+    </figure>
+    <div class="highlights" aria-label="Key contributions">
+      <div><span class="highlight-value">Training-free</span><span>No obstacle-aware retraining</span></div>
+      <div><span class="highlight-value">Analytic guidance</span><span>From geometry to safety probability</span></div>
+      <div><span class="highlight-value">Multimodal</span><span>Recover the safe conditional distribution</span></div>
+    </div>
+  </section>
+
+  <section class="section abstract-section" id="abstract">
+    <div class="reading-width">
+      <p class="eyebrow">THE IDEA</p><h2>Safety as conditional generation</h2>
+      <p>Diffusion models learn expressive, multimodal distributions of trajectories. When a new obstacle blocks a familiar route, a safe planner should recover the remaining feasible behaviors while staying faithful to the learned distribution.</p>
+      <p>We formulate safe planning as sampling trajectories conditioned on collision avoidance. The exact reverse process is characterized by a Doob <i>h</i>-transform, but its safety posterior is generally intractable. <strong>ANCHOR approximates this probability analytically</strong>: Tweedie moments describe the denoised posterior, and signed-distance geometry reduces the safety integral to a one-dimensional Gaussian tail.</p>
+      <p>The resulting guidance requires no additional training. Under explicit regularity assumptions on the data distribution and obstacle geometry, the continuous-time guided process is almost surely safe. Experiments investigate conditional distribution recovery, multimodal navigation, locomotion, and manipulation.</p>
+    </div>
+  </section>
+
+  <section class="section container" id="method">
+    <div class="section-heading"><p class="eyebrow">HOW IT WORKS</p><h2>A probabilistic route to safety</h2><p>One pretrained score model. A geometric description of the obstacles.<br>Three steps to guide each denoising update.</p></div>
+    <div class="method-grid">
+      <article class="method-step"><span class="step-number">01</span><h3>Estimate the clean trajectory</h3><p>Use Tweedie’s formulas to approximate the clean-data posterior with a Gaussian. Its mean predicts the trajectory; its covariance captures uncertainty.</p><div class="formula" aria-label="The clean posterior is approximated by a Gaussian">p(x₀ | xₜ) ≈ 𝒩(μ̂₀, Σ̂₀)</div></article>
+      <article class="method-step"><span class="step-number">02</span><h3>Measure the safe probability</h3><p>Linearize the obstacle’s signed-distance function around the posterior mean. The Gaussian mass on the safe side becomes a scalar Gaussian CDF.</p><div class="formula" aria-label="Approximate safety probability equals Phi of signed distance divided by effective uncertainty">ĥₜ(xₜ) ≈ Φ(s<sub>C</sub>(μ̂₀) / σ<sub>SDF</sub>)</div></article>
+      <article class="method-step"><span class="step-number">03</span><h3>Guide the reverse diffusion</h3><p>Add the log-gradient of the estimated safety probability to the score. Activate guidance below a time threshold, when the local approximation is more accurate.</p><div class="formula" aria-label="Guidance is the gradient of the log safety probability">fₜ(xₜ) = ∇<sub>xₜ</sub> log ĥₜ(xₜ)</div></article>
+    </div>
+    <details class="theory-note"><summary>What does the safety guarantee cover?</summary><p>The theorem concerns the continuous-time reverse process under the paper’s assumptions: a bounded-gradient tilt of a Gaussian data distribution and separated obstacles with sufficiently regular boundaries and positive reach. The guarantee also holds for the Hessian-free isotropic covariance approximation. Finite-step sampling and physical execution are evaluated separately; the experiments below report their measured safety rates.</p></details>
+  </section>
+
+  <section class="section tinted" id="experiments">
+    <div class="container">
+      <div class="section-heading"><p class="eyebrow">CONDITIONAL DISTRIBUTION RECOVERY</p><h2>Keep the modes that remain safe</h2><p>Synthetic tasks reveal both where samples go and how closely<br>they match the exact safety-conditioned distribution.</p></div>
+      <div class="tabs" role="tablist" aria-label="Synthetic benchmark" data-tabs="synthetic">
+        <button id="tab-gaussian" role="tab" aria-selected="true" aria-controls="panel-gaussian" data-panel="panel-gaussian">2D Gaussian mixture</button>
+        <button id="tab-trajectory" role="tab" aria-selected="false" aria-controls="panel-trajectory" tabindex="-1" data-panel="panel-trajectory">Multimodal trajectories</button>
+      </div>
+      <div class="figure-panel" role="tabpanel" id="panel-gaussian" aria-labelledby="tab-gaussian">
+        <figure><a class="figure-link" href="assets/figures/gaussian-comparison.webp" target="_blank" rel="noopener" aria-label="Open Gaussian mixture comparison at full size"><img src="assets/figures/gaussian-comparison.webp" width="2200" height="2200" loading="lazy" alt="Four panels show the training distribution, unconstrained planner, CBF-based safety, and ANCHOR on a 2D mixture with an unsafe region."></a><figcaption>On a Gaussian mixture, ANCHOR recovers the safe modes while avoiding the boundary concentration seen in the comparison methods. This figure uses the full-Hessian ANCHOR variant. <span class="enlarge-hint">Click the figure to enlarge ↗</span></figcaption></figure>
+      </div>
+      <div class="figure-panel" role="tabpanel" id="panel-trajectory" aria-labelledby="tab-trajectory" hidden>
+        <figure><a class="figure-link" href="assets/figures/trajectory-comparison.webp" target="_blank" rel="noopener" aria-label="Open synthetic trajectory comparison at full size"><img src="assets/figures/trajectory-comparison.webp" width="2200" height="2200" loading="lazy" alt="Comparison of generated trajectories and the safe conditional target in a synthetic task with multiple routes and a test-time obstacle."></a><figcaption>A test-time obstacle removes a trajectory mode. ANCHOR redistributes samples toward the remaining safe routes. This figure uses inverse-standard-deviation weighting. <span class="enlarge-hint">Click the figure to enlarge ↗</span></figcaption></figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="section container" id="navigation">
+    <div class="section-heading"><p class="eyebrow">MULTIMODAL NAVIGATION</p><h2>When one route closes, find another</h2><p>New obstacles block demonstrated routes in Maze2D.<br>The task is to discover the safe alternatives already supported by the data.</p></div>
+    <figure class="dataset-figure"><img src="assets/figures/maze-datasets.webp" width="2200" height="1645" loading="lazy" alt="Medium and Hard Maze2D demonstration datasets, with multiple routes between start and goal and red test-time obstacles."><figcaption><strong>Medium:</strong> 12,000 demonstrations, 3 modes, 384-state horizon. <strong>Hard:</strong> 24,000 demonstrations, 6 modes, 768-state horizon. Obstacles block two and five modes, respectively.</figcaption></figure>
+    <details class="comparison-details"><summary>Explore all planner comparisons <span>Medium & Hard</span></summary><div class="comparison-grid"><figure><a href="assets/figures/medium_all_methods_4x3.webp" target="_blank" rel="noopener"><img src="assets/figures/medium_all_methods_4x3.webp" width="1418" height="2600" loading="lazy" alt="Medium Maze trajectories from twelve planners, including both ANCHOR weighting variants."></a><figcaption>Multimodal Maze · Medium</figcaption></figure><figure><a href="assets/figures/hard_all_methods_4x3.webp" target="_blank" rel="noopener"><img src="assets/figures/hard_all_methods_4x3.webp" width="1418" height="2600" loading="lazy" alt="Hard Maze trajectories from twelve planners, including both ANCHOR weighting variants."></a><figcaption>Multimodal Maze · Hard</figcaption></figure></div></details>
+  </section>
+
+  <section class="section tinted" id="results">
+    <div class="container">
+      <div class="section-heading"><p class="eyebrow">RESULTS</p><h2>Evaluate the whole trajectory</h2><p>Safety, boundary clearance, and task reward tell different parts of the story.</p></div>
+      <div class="tabs" role="tablist" aria-label="Maze results" data-tabs="maze">
+        <button id="tab-medium" role="tab" aria-selected="true" aria-controls="panel-medium" data-panel="panel-medium">Maze · Medium</button>
+        <button id="tab-hard" role="tab" aria-selected="false" aria-controls="panel-hard" tabindex="-1" data-panel="panel-hard">Maze · Hard</button>
+      </div>
+      <div role="tabpanel" id="panel-medium" aria-labelledby="tab-medium">
+        <div class="table-scroll" role="region" aria-label="Medium Maze results table" tabindex="0"><table><caption>Multimodal Maze: Medium · 192 planning attempts per method</caption><thead><tr><th scope="col">Method</th><th scope="col">Planned safe ↑</th><th scope="col">Boundary safe ↑</th><th scope="col">Reward ↑</th><th scope="col">Execution safe ↑</th></tr></thead><tbody>
+          <tr><th scope="row">Diffuser</th><td>37.0%</td><td>37.0%</td><td>28.30 ± 37.23</td><td>37.0%</td></tr>
+          <tr><th scope="row">Flow Matching</th><td>29.2%</td><td>29.2%</td><td>21.58 ± 33.81</td><td>29.7%</td></tr>
+          <tr><th scope="row">Truncate</th><td>36.5%</td><td>36.5%</td><td>27.62 ± 36.78</td><td>37.5%</td></tr>
+          <tr><th scope="row">Classifier guidance</th><td>34.4%</td><td>34.4%</td><td>26.57 ± 36.69</td><td>34.9%</td></tr>
+          <tr><th scope="row">SafeDiffuser–RoS</th><td>0.0%</td><td>0.0%</td><td>33.16 ± 39.54</td><td>41.7%</td></tr>
+          <tr><th scope="row">SafeDiffuser–ReS</th><td>37.0%</td><td>37.0%</td><td>28.22 ± 37.13</td><td>37.5%</td></tr>
+          <tr><th scope="row">SafeDiffuser–TVS</th><td>43.8%</td><td>43.8%</td><td>33.10 ± 37.88</td><td>44.3%</td></tr>
+          <tr><th scope="row">FlowMatcher</th><td>0.0%</td><td>0.0%</td><td>0.00 ± 0.00</td><td>1.0%</td></tr>
+          <tr><th scope="row">SafeFlowMatcher</th><td>0.0%</td><td>0.0%</td><td>0.00 ± 0.00</td><td>1.6%</td></tr>
+          <tr><th scope="row">SAD-Flower</th><td>4.7%</td><td>4.7%</td><td>27.95 ± 38.46</td><td>22.4%</td></tr>
+          <tr class="ours"><th scope="row">ANCHOR</th><td>94.3%</td><td>94.3%</td><td>70.26 ± 18.89</td><td>94.3%</td></tr>
+        </tbody></table></div>
+      </div>
+      <div role="tabpanel" id="panel-hard" aria-labelledby="tab-hard" hidden>
+        <div class="table-scroll" role="region" aria-label="Hard Maze results table" tabindex="0"><table><caption>Multimodal Maze: Hard · 192 planning attempts per method</caption><thead><tr><th scope="col">Method</th><th scope="col">Planned safe ↑</th><th scope="col">Boundary safe ↑</th><th scope="col">Reward ↑</th><th scope="col">Execution safe ↑</th></tr></thead><tbody>
+          <tr><th scope="row">Diffuser</th><td>4.7%</td><td>4.2%</td><td>20.71 ± 46.67</td><td>11.5%</td></tr>
+          <tr><th scope="row">Flow Matching</th><td>3.6%</td><td>3.6%</td><td>16.88 ± 44.22</td><td>8.3%</td></tr>
+          <tr><th scope="row">Truncate</th><td>5.7%</td><td>5.2%</td><td>20.51 ± 46.04</td><td>11.5%</td></tr>
+          <tr><th scope="row">Classifier guidance</th><td>4.7%</td><td>4.2%</td><td>21.49 ± 47.56</td><td>13.0%</td></tr>
+          <tr><th scope="row">SafeDiffuser–RoS</th><td colspan="4" class="infeasible">Infeasible (0/192 completed plans)</td></tr>
+          <tr><th scope="row">SafeDiffuser–ReS</th><td colspan="4" class="infeasible">Infeasible (0/192 completed plans)</td></tr>
+          <tr><th scope="row">SafeDiffuser–TVS</th><td>1.6%</td><td>1.6%</td><td>16.06 ± 40.94</td><td>8.9%</td></tr>
+          <tr><th scope="row">FlowMatcher</th><td>0.0%</td><td>0.0%</td><td>7.35 ± 13.37</td><td>0.5%</td></tr>
+          <tr><th scope="row">SafeFlowMatcher</th><td>0.0%</td><td>0.0%</td><td>2.78 ± 8.61</td><td>0.0%</td></tr>
+          <tr><th scope="row">SAD-Flower</th><td>0.0%</td><td>0.0%</td><td>4.35 ± 21.22</td><td>0.5%</td></tr>
+          <tr class="ours"><th scope="row">ANCHOR (constant)</th><td>25.0%</td><td>22.4%</td><td>79.52 ± 60.22</td><td>39.1%</td></tr>
+        </tbody></table></div>
+      </div>
+      <p class="table-note">Main comparison from the paper. Planned safety includes added obstacles and maze walls. Boundary safety requires &gt; 0.01 m clearance. Reward is mean ± population standard deviation. The Hard task remains challenging: ANCHOR’s higher reward does not imply uniformly safe plans.</p>
+    </div>
+  </section>
+
+  <section class="section container" id="robotics">
+    <div class="section-heading"><p class="eyebrow">BEYOND NAVIGATION</p><h2>Locomotion & manipulation</h2><p>The same formulation applies to height constraints and joint limits.</p></div>
+    <div class="robot-gallery">
+      <figure><div class="robot-label"><h3>Hopper</h3><span>Root height ≤ 1.60 m</span></div><img src="assets/figures/hopper_timesteps.webp" width="2000" height="360" loading="lazy" alt="Six successive simulation frames of a hopping robot."></figure>
+      <figure><div class="robot-label"><h3>Walker2d</h3><span>Root height ≤ 1.40 m</span></div><img src="assets/figures/walker2d_timesteps.webp" width="2000" height="360" loading="lazy" alt="Six successive simulation frames of a bipedal walking robot."></figure>
+      <figure><div class="robot-label"><h3>Kuka</h3><span>90% of original joint limits</span></div><img src="assets/figures/kuka_timesteps.webp" width="2000" height="362" loading="lazy" alt="Six successive simulation frames of a Kuka arm manipulating blocks."></figure>
+    </div>
+    <div class="table-scroll" role="region" aria-label="ANCHOR robotics results table" tabindex="0"><table><caption>ANCHOR · 100 completed episodes per benchmark</caption><thead><tr><th scope="col">Benchmark</th><th scope="col">Score / reward ↑</th><th scope="col">Planned safe ↑</th><th scope="col">Execution safe ↑</th></tr></thead><tbody><tr><th scope="row">Hopper</th><td>0.437 ± 0.085</td><td>100%</td><td>39%</td></tr><tr><th scope="row">Walker2d</th><td>0.226 ± 0.154</td><td>100%</td><td>60%</td></tr><tr><th scope="row">Kuka</th><td>0.680 ± 0.581</td><td>100%</td><td>100%</td></tr></tbody></table></div>
+    <p class="table-note">Scores/rewards are mean ± standard deviation. Planned safety and execution safety are distinct: tracking and unmodeled dynamics can lead to violations during locomotion, even when every generated plan satisfies the specified constraint.</p>
+  </section>
+
+  <section class="closing section">
+    <div class="reading-width"><img src="assets/favicon.svg" width="38" height="38" alt=""><h2>Explore ANCHOR</h2><p>Analytical Normal-approximation of Conditional<br><i>h</i>-functions for Obstacle-aware Replanning.</p><a class="button button-dark" href="https://github.com/DoobDiffusion/ANCHOR">Project on GitHub <span aria-hidden="true">↗</span></a></div>
+  </section>
+</main>
+<footer class="site-footer"><p>ANCHOR · Safe Diffusion Planning</p><p>Page design inspired by <a href="https://nerfies.github.io/">Nerfies</a>. Figures and results from the ANCHOR manuscript.</p><a href="#top">Back to top ↑</a></footer>
+</body>
+</html>
