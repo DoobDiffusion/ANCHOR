@@ -25,7 +25,7 @@ GitHub Pages publishes the root of the `main` branch. `.nojekyll` keeps the site
 - `assets/js/main.js`: mouse and keyboard controls for experiment tabs.
 - `assets/figures/`: optimized WebP exports of manuscript figures.
 
-The page is intentionally anonymous. Do not add author names, affiliations, or links to the GitHub repository. Code and Paper are displayed as “Coming soon” in the resource box.
+The page is intentionally anonymous. Do not add author names, affiliations, or links to the GitHub repository. Code, Paper, and Dataset are displayed in separate icon boxes, each marked “Coming soon”.
 
 ## Content provenance
 
